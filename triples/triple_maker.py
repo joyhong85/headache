@@ -1,6 +1,6 @@
 import pandas as pd
 from rdflib import Graph, Literal, RDF, URIRef, Namespace
-from rdflib.namespace import FOAF, XSD, RDF, RDFS, SKOS, DCTERMS, OWL
+from rdflib.namespace import FOAF, XSD, RDF, RDFS, SKOS, DCTERMS, OWL, DC
 import os, logging
 from pathlib import Path
 
@@ -84,5 +84,38 @@ def make_concept_scheme():
     serialize(g, "headache_scheme.ttl", format='turtle')
 
 
-make_concept()
-make_concept_scheme()
+def add_triple(g, subject:URIRef, predicate:URIRef, object_prefix, object_suffix, object_type):
+    if object_suffix != "":
+        if object_type == URIRef:
+                g.add((subject, predicate, URIRef(object_prefix + object_suffix)))
+        else:
+            g.add((subject, predicate, Literal(object_suffix)))
+
+
+def make_ontology():
+    df = pd.read_excel("../data/headache.xlsx", sheet_name="model")
+    df.fillna("", inplace=True)
+    g = init_graph()
+    g.add((URIRef(ZIG), RDF.type, URIRef(OWL + 'Ontology')))
+    g.add((URIRef(ZIG), URIRef(OWL + 'imports'), URIRef('http://www.w3.org/2004/02/skos/core')))
+    g.add((URIRef(ZIG), URIRef(OWL + 'versionInfo'), Literal('1.0')))
+    g.add((URIRef(ZIG), DC.creator, Literal('Joyhong(su4620@gmail.com)')))
+    g.add((URIRef(ZIG), RDFS.comment, Literal('지그재그 토이프로젝트를 위해 두통 도메인에 대한 온톨로지를 구성')))
+
+    for row in df.values:
+        subject = URIRef(ONT + row[1])
+        add_triple(g, subject, RDFS.label, "", row[2], Literal)
+        add_triple(g, subject, RDFS.comment, "", row[3], Literal)
+        if row[0] == 'class':
+            add_triple(g, subject, RDF.type, OWL, 'Class', URIRef)
+            add_triple(g, subject, RDFS.subClassOf, OWL, 'Thing', URIRef)
+        elif row[0] == "objectproperty":
+            add_triple(g, subject, RDF.type, OWL, 'ObjectProperty', URIRef)
+            add_triple(g, subject, RDFS.domain, ONT, row[4], URIRef)
+            add_triple(g, subject, RDFS.range, ONT, row[5], URIRef)
+    serialize(g, "headache_ontology.ttl", format='turtle')
+
+
+# make_concept()
+# make_concept_scheme()
+make_ontology()
