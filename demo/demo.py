@@ -1,15 +1,24 @@
-from SPARQLWrapper import SPARQLWrapper, CSV, POST
+from SPARQLWrapper import SPARQLWrapper, CSV, POST, DIGEST, BASIC
+import ssl, os
+from dotenv import load_dotenv
 
+
+load_dotenv()
 # RDFox SPARQL 엔드포인트 설정
-sparql = SPARQLWrapper("http://localhost:12110/datastores/headache/sparql")
+# sparql = SPARQLWrapper("http://localhost:12110/datastores/headache/sparql")
+sparql = SPARQLWrapper("https://rdfox.xeler.work:12110/datastores/joyhong/sparql")
 
 prefixes = """
     PREFIX g: <http://joyhong.tistory.com/graph/>
     PREFIX zig: <http://joyhong.tistory.com/zigzag/>
 """
 
+
 def run_query(query_string:str):
+    ssl._create_default_https_context = ssl._create_unverified_context
     sparql.setQuery(prefixes+query_string)
+    sparql.setCredentials(os.getenv("user"), os.getenv("password"), realm=DIGEST)
+
     sparql.setMethod(POST)
     # 반환 형식 설정 (JSON)
     sparql.setReturnFormat(CSV)
@@ -138,7 +147,7 @@ def update_frequency(frequency):
 
 # check_patient()
 # user_setup()
-# check_patient_with_status_results()
+check_patient_with_status_results()
 # start_examination_1()
 # check_patient_with_status_results()
 # add_duration() # 3시간
@@ -147,5 +156,5 @@ def update_frequency(frequency):
 # check_patient_with_status_results()
 # add_frequency() #3번
 # check_patient_with_status_results()
-update_frequency(5) #5번
-check_patient_with_status_results()
+# update_frequency(5) #5번
+# check_patient_with_status_results()
